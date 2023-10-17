@@ -4,6 +4,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, postgres::PgPool};
 
+// import module
+mod controllers;
+mod error;
+mod models;
+
 #[tokio::main]
 async fn main() {
 
