@@ -30,6 +30,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(|| async {"hello, world!"}))
         .route("/register", post(controllers::auth::register))
+        .route("/delete", post(controllers::auth::delete_user))
         .layer(cors)
         .layer(Extension(pool));
 
