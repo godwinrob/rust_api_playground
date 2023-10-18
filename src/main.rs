@@ -1,5 +1,5 @@
 use std::env;
-use axum::{routing::{get}, Router, Extension};
+use axum::{routing::{get, post}, Router, Extension};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
 use sqlx::{postgres::PgPoolOptions, postgres::PgPool};
@@ -29,6 +29,7 @@ async fn main() {
     // define router paths and add middleware layers
     let app = Router::new()
         .route("/", get(|| async {"hello, world!"}))
+        .route("/register", post(controllers::auth::register))
         .layer(cors)
         .layer(Extension(pool));
 
