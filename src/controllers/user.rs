@@ -1,7 +1,8 @@
 use crate::{error::AppError, models, models::auth::Claims};
 use axum::{Extension, Json};
 use serde_json::{json, Value};
-use sqlx::{PgPool};
+use sqlx::{PgPool, Row};
+use sqlx::postgres::PgRow;
 
 pub async fn user_profile(claims: Claims) -> Result<axum::Json<serde_json::Value>, AppError> {
 
@@ -59,29 +60,33 @@ pub async fn update_user(Json(user_to_update): Json<models::auth::User>, claims:
         return Err(AppError::InvalidToken);
     }
 
+    let mut email_for_update = "".to_string();
+
     // get the user for the email from database
-    let query_str = "SELECT email, password FROM users where email = $1 LIMIT 1";
-    let user = sqlx::query_as::<_, models::auth::User>(query_str)
+    let query_str = "SELECT email FROM users where email = $1 LIMIT 1";
+    let user = sqlx::query(query_str)
         .bind(&claims.email)
+        .map(|row: PgRow| models::auth::User {
+            email: row.get("email"),
+            password: "".to_string(),
+        })
         .fetch_optional(&pool)
         .await
-        .map_err(|err| {
-            dbg!(err);
-            AppError::InternalServerError
-        })?;
+        .map_err(|_| AppError::InternalServerError)?;
 
     if let None = user {
         //if a user with email does not exist return error
         return Err(AppError::UserDoesNotExist);
     }
 
-    let mut email_for_update = "".to_string();
-
     if let Some(u) = user {
         if u.email != "" {
             email_for_update = u.email
         }
-    };
+    }
+
+    println!("email from db: {}", email_for_update);
+    println!("new email: {}", user_to_update.email);
 
     let result = sqlx::query("UPDATE users SET email = $1 WHERE email = $2")
         .bind(&user_to_update.email)
