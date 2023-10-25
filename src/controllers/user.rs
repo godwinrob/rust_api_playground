@@ -1,11 +1,10 @@
 use crate::{error::AppError, models, models::auth::Claims};
 use axum::{Extension, Json};
 use serde_json::{json, Value};
-use sqlx::{PgPool, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Row};
 
 pub async fn user_profile(claims: Claims) -> Result<axum::Json<serde_json::Value>, AppError> {
-
     Ok(axum::Json(serde_json::json!({"email": claims.email})))
 }
 
@@ -54,7 +53,11 @@ pub async fn delete_user(
     }
 }
 
-pub async fn update_user(Json(user_to_update): Json<models::auth::User>, claims: Claims, Extension(pool): Extension<PgPool>) -> Result<axum::Json<serde_json::Value>, AppError> {
+pub async fn update_user(
+    Json(user_to_update): Json<models::auth::User>,
+    claims: Claims,
+    Extension(pool): Extension<PgPool>,
+) -> Result<axum::Json<serde_json::Value>, AppError> {
     // check if email or password is a blank string
     if claims.email.is_empty() {
         return Err(AppError::InvalidToken);
@@ -99,5 +102,4 @@ pub async fn update_user(Json(user_to_update): Json<models::auth::User>, claims:
     } else {
         Ok(Json(json!({ "msg": "user has been updated!" })))
     }
-
 }

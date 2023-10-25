@@ -1,8 +1,7 @@
 use axum::{Extension, Json};
 use jsonwebtoken::{encode, Header};
 use serde_json::{json, Value};
-use sqlx::{PgPool};
-
+use sqlx::PgPool;
 
 use crate::{
     error::AppError,
@@ -24,13 +23,13 @@ pub async fn register(
     let user = sqlx::query_as::<_, models::auth::User>(
         "SELECT email, password FROM users where email = $1",
     )
-        .bind(&credentials.email)
-        .fetch_optional(&pool)
-        .await
-        .map_err(|err| {
-            dbg!(err);
-            AppError::InternalServerError
-        })?;
+    .bind(&credentials.email)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|err| {
+        dbg!(err);
+        AppError::InternalServerError
+    })?;
 
     if let Some(_) = user {
         //if a user with email already exits send error
@@ -63,13 +62,13 @@ pub async fn login(
     let user = sqlx::query_as::<_, models::auth::User>(
         "SELECT email, password FROM users where email = $1",
     )
-        .bind(&credentials.email)
-        .fetch_optional(&pool)
-        .await
-        .map_err(|err| {
-            dbg!(err);
-            AppError::InternalServerError
-        })?;
+    .bind(&credentials.email)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|err| {
+        dbg!(err);
+        AppError::InternalServerError
+    })?;
 
     if let Some(user) = user {
         //if user exits then:

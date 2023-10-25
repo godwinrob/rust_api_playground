@@ -21,8 +21,8 @@ pub fn get_timestamp_8_hours_from_now() -> u64 {
 // verify token and extract data from it (a kind of middleware), whenever you try to extract claims in the handle it will first run this code
 #[async_trait]
 impl<B> FromRequest<B> for Claims
-    where
-        B: Send,
+where
+    B: Send,
 {
     type Rejection = AppError;
 
