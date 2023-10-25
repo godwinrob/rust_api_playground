@@ -1,10 +1,14 @@
 use axum::{Extension, Json};
+use jsonwebtoken::{encode, Header};
 use serde_json::{json, Value};
 use sqlx::{PgPool};
 
+
 use crate::{
     error::AppError,
-    models,
+    models::{self, auth::Claims},
+    utils::get_timestamp_8_hours_from_now,
+    KEYS,
 };
 
 pub async fn register(
@@ -46,18 +50,19 @@ pub async fn register(
     }
 }
 
-pub async fn delete_user(
+pub async fn login(
     Json(credentials): Json<models::auth::User>,
     Extension(pool): Extension<PgPool>,
 ) -> Result<Json<Value>, AppError> {
     // check if email or password is a blank string
-    if credentials.email.is_empty() {
+    if credentials.email.is_empty() || credentials.password.is_empty() {
         return Err(AppError::MissingCredential);
     }
 
     // get the user for the email from database
-    let query_str = "SELECT email, password FROM users where email = $1 LIMIT 1";
-    let user = sqlx::query_as::<_, models::auth::User>(query_str)
+    let user = sqlx::query_as::<_, models::auth::User>(
+        "SELECT email, password FROM users where email = $1",
+    )
         .bind(&credentials.email)
         .fetch_optional(&pool)
         .await
@@ -66,26 +71,25 @@ pub async fn delete_user(
             AppError::InternalServerError
         })?;
 
-    if let None = user {
-        //if a user with email does not exist return error
-        return Err(AppError::UserDoesNotExist);
-    }
+    if let Some(user) = user {
+        //if user exits then:
 
-    if let Some(u) = user {
-        if credentials.password != u.password {
-            return Err(AppError::WrongCredential);
+        // if password is encrypted than decode it first before comparing
+        if user.password != credentials.password {
+            // password is incorrect
+            Err(AppError::WrongCredential)
+        } else {
+            let claims = Claims {
+                email: credentials.email.to_owned(),
+                exp: get_timestamp_8_hours_from_now(),
+            };
+            let token = encode(&Header::default(), &claims, &KEYS.encoding)
+                .map_err(|_| AppError::TokenCreation)?;
+            // return bearer token
+            Ok(Json(json!({ "access_token": token, "type": "Bearer" })))
         }
-    }
-
-
-    let result = sqlx::query("DELETE FROM users WHERE email=$1")
-        .bind(&credentials.email)
-        .execute(&pool)
-        .await
-        .map_err(|_| AppError::InternalServerError)?;
-    if result.rows_affected() < 1 {
-        Err(AppError::InternalServerError)
     } else {
-        Ok(Json(json!({ "msg": "deleted successfully" })))
+        // if the user does not exit
+        Err(AppError::UserDoesNotExist)
     }
 }

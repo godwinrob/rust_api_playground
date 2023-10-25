@@ -20,9 +20,9 @@ impl IntoResponse for AppError {
                 "an internal server error occured",
             ),
             Self::InvalidToken => (StatusCode::BAD_REQUEST, "invalid token"),
-            Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing credential"),
+            Self::MissingCredential => (StatusCode::BAD_REQUEST, "missing user or password"),
             Self::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "failed to create token"),
-            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "wrong credentials"),
+            Self::WrongCredential => (StatusCode::UNAUTHORIZED, "invalid user or password"),
             Self::UserDoesNotExist => (StatusCode::UNAUTHORIZED, "User does not exist"),
             Self::UserAlreadyExits => (StatusCode::BAD_REQUEST, "User already exists"),
         };
